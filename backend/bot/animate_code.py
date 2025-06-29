@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from manim import *
 import glob
+from typing import List
 
 # --- ШАГ 1: ГЛОБАЛЬНАЯ НАСТРОЙКА (выполняется при импорте файла) ---
 # Читаем разрешение из переменной окружения, которую задает bot.py
@@ -16,6 +17,21 @@ config.frame_rate = 30
 # Указываем, чтобы Manim не добавлял свои флаги к имени файла, т.к. мы задаем его точно
 # config.output_file = Path(os.environ.get("OUTPUT_FILE", "video_only.mp4")).stem
 
+def split_text_to_fit(text: str, max_width: float, font: str = "Arial", weight=BOLD) -> str:
+    words = text.split()
+    lines: List[str] = []
+    current_line = ""
+    for word in words:
+        test_line = (current_line + " " + word).strip()
+        test_mob = Text(test_line, font=font, weight=weight)
+        if test_mob.width <= max_width or not current_line:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word
+    if current_line:
+        lines.append(current_line)
+    return "\n".join(lines)
 
 class CodeScene(Scene):
     def __init__(self, **kwargs):
@@ -34,16 +50,25 @@ class CodeScene(Scene):
             self.camera.frame_height = 16
         
         # --- ШАГ 3: ЛОГИКА РЕНДЕРИНГА (без изменений) ---
-        top_text_mob = Text(self.top_text, font="Arial", weight=BOLD).scale(1.2)
-        bottom_text_mob = Text(self.bottom_text, font="Arial").scale(0.8)
-
         if self.top_text:
-            top_text_mob.to_edge(UP, buff=0.5)
+            top_text_wrapped = split_text_to_fit(self.top_text, self.camera.frame_width * 0.95, font="Arial", weight=BOLD)
+            top_text_mob = Text(top_text_wrapped, font="Arial", weight=BOLD)
+            top_text_mob.scale_to_fit_width(self.camera.frame_width * 0.95)
+            top_text_mob.align_on_border(UP, buff=0.2)
+            top_text_mob.move_to([0, top_text_mob.get_center()[1], 0])  # Центрируем по X
             self.add(top_text_mob)
-        
+        else:
+            top_text_mob = Text("", font="Arial", weight=BOLD)
+
         if self.bottom_text:
-            bottom_text_mob.to_edge(DOWN, buff=0.5)
+            bottom_text_wrapped = split_text_to_fit(self.bottom_text, self.camera.frame_width * 0.95, font="Arial")
+            bottom_text_mob = Text(bottom_text_wrapped, font="Arial").scale(0.8)
+            bottom_text_mob.scale_to_fit_width(self.camera.frame_width * 0.95)
+            bottom_text_mob.align_on_border(DOWN, buff=0.2)
+            bottom_text_mob.move_to([0, bottom_text_mob.get_center()[1], 0])  # Центрируем по X
             self.add(bottom_text_mob)
+        else:
+            bottom_text_mob = Text("", font="Arial").scale(0.8)
         
         # Определяем доступное пространство для кода между надписями
         code_top_y = top_text_mob.get_bottom()[1] - 0.5 if self.top_text else self.camera.frame_height / 2 - 0.5
