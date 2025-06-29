@@ -54,8 +54,11 @@ class CodeScene(Scene):
             top_text_wrapped = split_text_to_fit(self.top_text, self.camera.frame_width * 0.95, font="Arial", weight=BOLD)
             top_text_mob = Text(top_text_wrapped, font="Arial", weight=BOLD)
             top_text_mob.scale_to_fit_width(self.camera.frame_width * 0.95)
-            top_text_mob.align_on_border(UP, buff=0.2)
-            top_text_mob.move_to([0, top_text_mob.get_center()[1], 0])  # Центрируем по X
+            max_top_height = self.camera.frame_height * 0.15
+            if top_text_mob.height > max_top_height:
+                top_text_mob.scale_to_fit_height(max_top_height)
+            # Центрируем по X, прижимаем к верху с небольшим отступом
+            top_text_mob.move_to([0, self.camera.frame_height/2 - top_text_mob.height/2 - 0.2, 0])
             self.add(top_text_mob)
         else:
             top_text_mob = Text("", font="Arial", weight=BOLD)
@@ -64,8 +67,11 @@ class CodeScene(Scene):
             bottom_text_wrapped = split_text_to_fit(self.bottom_text, self.camera.frame_width * 0.95, font="Arial")
             bottom_text_mob = Text(bottom_text_wrapped, font="Arial").scale(0.8)
             bottom_text_mob.scale_to_fit_width(self.camera.frame_width * 0.95)
-            bottom_text_mob.align_on_border(DOWN, buff=0.2)
-            bottom_text_mob.move_to([0, bottom_text_mob.get_center()[1], 0])  # Центрируем по X
+            max_bottom_height = self.camera.frame_height * 0.15
+            if bottom_text_mob.height > max_bottom_height:
+                bottom_text_mob.scale_to_fit_height(max_bottom_height)
+            # Центрируем по X, прижимаем к низу с небольшим отступом
+            bottom_text_mob.move_to([0, -self.camera.frame_height/2 + bottom_text_mob.height/2 + 0.2, 0])
             self.add(bottom_text_mob)
         else:
             bottom_text_mob = Text("", font="Arial").scale(0.8)
