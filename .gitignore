@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+venv/
+env/
+ENV/
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
+
+# Docker
+*.log
+docker-compose.override.yml
+
+# Secrets
+.env
+shared_data/client_secrets.json
+
+# Byte-compiled / optimized / DLL files
+*.so
+
+# Test output
+*.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+
+# Coverage
+.coverage
+htmlcov/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Local videos
+videos/ 

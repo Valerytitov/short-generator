@@ -1,0 +1,18 @@
+# docker-compose.yml (версия для "ручной" авторизации)
+version: '3.8'
+
+services:
+  bot:
+    build:
+      context: ./backend/bot
+      dockerfile: Dockerfile
+    env_file: .env
+    volumes:
+      # Папка для обмена токенами и client_secrets.json
+      - ./shared_data:/data
+      # Папка для сохранения итоговых видео
+      - ./videos:/app/static/videos
+
+volumes:
+  shared_data:
+  videos:
