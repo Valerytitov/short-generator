@@ -16,6 +16,7 @@ from telegram.ext import (
     Application, CommandHandler, MessageHandler, filters,
     ContextTypes, ConversationHandler, CallbackQueryHandler
 )
+from pydub import AudioSegment
 
 # --- Настройка ---
 load_dotenv()
@@ -106,12 +107,17 @@ async def choose_format(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
         response = client.audio.speech.create(model="tts-1", voice="alloy", input=content["tts_text"])
         response.stream_to_file(audio_path)
 
+        # === Вычисляем длительность аудиофайла ===
+        audio = AudioSegment.from_file(audio_path)
+        audio_duration = audio.duration_seconds
+
         # Генерация видеоряда Manim
         env = os.environ.copy()
         env["CODE_TEXT"] = content["code_text"]
         env["TOP_TEXT"] = content["top_text"]
         env["BOTTOM_TEXT"] = content["bottom_text"]
         env["RESOLUTION"] = "1080,1920" if chosen_format == "9:16" else "1920,1080"
+        env["AUDIO_DURATION"] = str(audio_duration)
         manim_command = ["python", "-m", "manim", "animate_code.py", "CodeScene"]
         process = await asyncio.create_subprocess_exec(*manim_command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, env=env)
         _, stderr = await process.communicate()

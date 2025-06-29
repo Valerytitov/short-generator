@@ -67,8 +67,10 @@ class CodeScene(Scene):
         center_point = np.array([0, code_bottom_y + available_height / 2, 0])
         code.move_to(center_point)
 
-        self.play(Write(code), run_time=5)
-        self.wait(2)
+        animation_time = 5
+        audio_duration = float(os.environ.get("AUDIO_DURATION", "7"))
+        self.play(Write(code), run_time=animation_time)
+        self.wait(max(0, audio_duration - animation_time))
         # [MANIM DEBUG] Выводим путь итогового видео
         print(f"[MANIM DEBUG] Итоговое видео: {self.renderer.file_writer.movie_file_path}")
 
