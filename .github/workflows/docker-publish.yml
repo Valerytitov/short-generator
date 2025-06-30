@@ -1,0 +1,54 @@
+# Имя вашего workflow, которое будет отображаться в табе "Actions" на GitHub
+name: Publish Docker Image
+
+# Триггер: запускать этот workflow при каждом пуше в ветку 'main'
+on:
+  push:
+    branches: [ "main" ]
+
+# Задачи, которые нужно выполнить
+jobs:
+  build_and_push:
+    # Запускать на последней версии Ubuntu (стандарт для GitHub Actions)
+    runs-on: ubuntu-latest
+    
+    # Указываем права доступа для токена. Это современная лучшая практика безопасности.
+    permissions:
+      contents: read      # Право на чтение кода (чтобы его скачать)
+      packages: write    # Право на запись в GitHub Packages (чтобы опубликовать образ)
+
+    # Шаги, которые будут выполняться последовательно
+    steps:
+      # Шаг 1: Скачиваем исходный код из репозитория
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Шаг 2: Авторизация в реестре ghcr.io
+      # Этот экшен использует встроенный, безопасный токен GITHUB_TOKEN
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }} # Имя владельца репозитория (ваше имя)
+          password: ${{ secrets.GITHUB_TOKEN }}      # Специальный, временный токен, который GitHub создает для каждого запуска
+
+      # Шаг 3: Настройка Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Шаг 4: Сборка и публикация мультиархитектурного образа
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/bot # Использовать папку с ботом как контекст сборки
+          push: true # Обязательно выполнить push в реестр
+          platforms: linux/amd64,linux/arm64 # Собирать под обе архитектуры
+          
+          # Указываем теги для образа. Лучшая практика - использовать несколько тегов.
+          tags: |
+            ghcr.io/valerytitov/short-generator:latest
+            ghcr.io/valerytitov/short-generator:${{ github.sha }}
+          
+          # Включаем кэширование, чтобы последующие сборки проходили НАМНОГО быстрее
+          cache-from: type=gha
+          cache-to: type=gha,mode=max 
