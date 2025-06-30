@@ -72,6 +72,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     await update.message.reply_text("Привет! Пришлите текст для озвучки, код (внутри ///) и надписи (!!!сверху!!! и @@снизу@@).")
     return GETTING_CONTENT
 
+async def start_over(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Прерывает текущий диалог, очищает данные и начинает новый."""
+    await update.message.reply_text("Предыдущая операция отменена. Начинаем заново!")
+    await cleanup_temp_folders(context)
+    return await start(update, context)
+
 async def get_content(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_input = update.message.text
     parsed_data = parse_user_input(user_input)
@@ -103,9 +109,14 @@ async def choose_format(update: Update, context: ContextTypes.DEFAULT_TYPE) -> i
     final_video_path = final_video_dir / "final_video.mp4"
 
     try:
-        # Генерация аудио
-        response = client.audio.speech.create(model="tts-1", voice="alloy", input=content["tts_text"])
-        response.stream_to_file(audio_path)
+        # Генерация аудио (новый, правильный способ)
+        logger.info("Генерация аудио...")
+        with client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="alloy",
+            input=content["tts_text"]
+        ) as response:
+            response.stream_to_file(audio_path)
 
         # === Вычисляем длительность аудиофайла ===
         audio = AudioSegment.from_file(audio_path)
@@ -261,7 +272,7 @@ def main() -> None:
             CHOOSING_FORMAT: [CallbackQueryHandler(choose_format)],
             ASK_YOUTUBE_UPLOAD: [CallbackQueryHandler(handle_youtube_upload_choice)]
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler("cancel", cancel), CommandHandler("start", start_over)],
         per_user=True, per_chat=True
     )
 
@@ -270,7 +281,7 @@ def main() -> None:
         states={
             WAITING_FOR_URL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_pasted_url)]
         },
-        fallbacks=[CommandHandler("cancel", cancel)],
+        fallbacks=[CommandHandler("cancel", cancel), CommandHandler("start", start_over)],
         per_user=True, per_chat=True
     )
 
